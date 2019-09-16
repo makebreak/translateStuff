@@ -23,7 +23,7 @@ from google.cloud import translate
 # Instantiates a client
 translate_client = translate.Client()
 
-# The target language
+# The target and source languages
 source= 'ru'
 target = 'en'
 
@@ -41,11 +41,8 @@ with open(ORIGINAL_FILE, "r", encoding='utf-8') as in_file:
                 text,
                 source_language=source,
                 target_language=target)
-            #row[0] = translation['translatedText']
             print(u'Translation: {}'.format(translation['translatedText']))
             translatedText = (u'Translation: {}'.format(translation['translatedText']))
             tab.insert(dict(text1=column, text2=translatedText))
-
-
 
 
