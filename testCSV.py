@@ -26,13 +26,15 @@ translate_client = translate.Client()
 # The target language
 source= 'ru'
 target = 'en'
-                     
-# for each row in the csv file being read, translate the first cell
+
+# given a csv file to read
+# for each row and for each column in the csv file,
+# translate each cell and write to a db
 with open(ORIGINAL_FILE, "r", encoding='utf-8') as in_file:
     reader = csv.reader(in_file)
     for row in reader:
         for column in row:
-            print(column + " BLABLAH")
+            print(column)
             text = column
             # translate text
             translation = translate_client.translate(
