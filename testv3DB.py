@@ -8,7 +8,7 @@ from google.cloud import translate_v3beta1
 
 # Instantiates a client
 project = file.project
-location = 'global' #'global:translateText'
+location = 'global' 
 translate_client = translate_v3beta1.TranslationServiceClient()
 parent_code = 'projects/' + project + '/locations/global' #+ location 
 #translate_client.location_path(project, location)
@@ -60,10 +60,8 @@ result = dbApps.query('SELECT id, appId, title, summary, description, developer,
 for row in result:
     # text from db to be translated
     # for v3 API, text to be translated needs to be a list
-    #titleText, summaryText, descriptionText = []
     app_dict = collections.defaultdict(list) 
     app_dict['title'].append(row['title'])
-    print(app_dict['title'])
     app_dict['summaryText'].append(row['summary'])
     app_dict['descriptionText'].append(row['description'])
     
@@ -86,4 +84,4 @@ for row in result:
 
     #sleep for 1 second 
     time.sleep(1)
-    # may need to use timeout API method
+    # may need to use timeout API method 
