@@ -1,8 +1,4 @@
-import os
-import file 
-import csv
-import config
-import dataset
+import os, file, csv, config, dataset, time
 
 # translate function
 def translateFunc(text):
@@ -66,3 +62,5 @@ for row in result:
     #insert into new db's translation table
     transTable.insert(dict(oldId=idText, appId=appIdText, title=translatedTitleText, summary=translatedSummaryText, description=translatedDescriptionText, developer = developerText))
 
+    #sleep for 1 second 
+    time.sleep(1)
