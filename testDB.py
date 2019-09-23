@@ -26,8 +26,8 @@ appTable = dbApps['android_apps']
 
 # Connect to db where we store translations
 db = dataset.connect('sqlite:///{}'.format(TRANSLATED_FILE))
-# table
-tab = db['translated']
+# table with translated fields
+transTable = db['translated_android_apps']
 
 # Google credentials
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = file.dirname
@@ -43,17 +43,26 @@ source= 'ru'
 target = 'en'
 
 # translate each entry and write to a db
-result = dbApps.query('SELECT title, summary FROM android_apps WHERE LANG=\''+source + '\'')
+result = dbApps.query('SELECT id, appId, title, summary, description, developer FROM android_apps WHERE LANG=\''+source + '\'')
 #for app in appTable:
 for row in result:
+    # text from db to be translated 
     titleText = row['title']
     print(titleText)
     summaryText=row['summary']
+    descriptionText = row['description']
+    
+    # info not to be translated but stored in new db for reference
+    idText = row['id']
+    appIdText = row['appId']
+    developerText = row['developer']
 
     # translate text - call function
     translatedTitleText = translateFunc(titleText)
-    print("translated Title text: " + translatedTitleText)
+    #print("translated Title text: " + translatedTitleText)
+    translatedSummaryText = translateFunc(summaryText)
+    translatedDescriptionText = translateFunc(descriptionText)
     
     #insert into new db's translation table
-    #    tab.insert(dict(text1=titleText, text2=translatedText))
+    transTable.insert(dict(oldId=idText, appId=appIdText, title=translatedTitleText, summary=translatedSummaryText, description=translatedDescriptionText, developer = developerText))
 
