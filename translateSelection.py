@@ -38,11 +38,15 @@ def translateFunc(text):
 ORIGINAL_FILE = str(config.THIS_DIR / "in.db")
 
 # db to write to
-TRANSLATED_FILE = str(config.THIS_DIR / "out.db")
+SELECTION_FILE = str(config.THIS_DIR / "selection.db")
+TRANSLATED_FILE = str(config.THIS_DIR / "translatedSelection.db")
 
 # Connect to original db with scraped data 
 dbApps = dataset.connect('sqlite:///{}'.format(ORIGINAL_FILE))
-appTable = dbApps['android_apps']
+
+# Connect to db where we store selection
+dbSelection = dataset.connect('sqlite:///{}'.format(SELECTION_FILE))
+selectionTable = dbSelection['android_apps']
 
 # Connect to db where we store translations
 db = dataset.connect('sqlite:///{}'.format(TRANSLATED_FILE))
@@ -52,14 +56,21 @@ transTable = db['translated_android_apps']
 # The target and source languages
 source = 'es'
 target = 'en'
+country = 'es'
 
+# get selection of apps
+result = dbApps.query('SELECT id, appId, title, summary, description,genreId, developer, LANG, COUNTRY FROM android_apps WHERE LANG=\''+source + '\' and COUNTRY=\''+country+'\' ORDER BY RANDOM() LIMIT 50; ')
+
+# Other sql options
+#and appId IN (\'com.\')  # for selecting among list of apps
+#and id > 8692') # for selecting range of apps, e.g., after a certain point 
+#and appId=\'com.\'' # for selecting specific app
+
+
+# insert results into selection db
 # translate each entry and write to a db
-result = dbApps.query('SELECT id, appId, title, summary, description, developer, LANG FROM android_apps WHERE LANG=\''+source + '\' and COUNTRY=\'es\'and id > 3682')
-
-#and id > 8692') 
-#and appId=\'com.\''
-
 for row in result:
+
     # text from db to be translated
     # for v3 API, text to be translated needs to be a list
     app_dict = collections.defaultdict(list) 
@@ -72,6 +83,8 @@ for row in result:
     appIdText = row['appId']
     developerText = row['developer']
     langText = row['LANG']
+    countryText = row['COUNTRY']
+    genreIdText = row['genreId']
     
     # translate text - call function
     translatedTitleText = translateFunc(app_dict['title'])
@@ -82,8 +95,11 @@ for row in result:
     #print("translated Title text: " + translatedDescriptionText)
     
     #insert into new db's translation table
-    transTable.insert(dict(oldId=idText, appId=appIdText, title=translatedTitleText, summary=translatedSummaryText, description=translatedDescriptionText, developer = developerText, LANG=langText))
+    transTable.insert(dict(oldId=idText, appId=appIdText, title=translatedTitleText, summary=translatedSummaryText, description=translatedDescriptionText, developer = developerText, LANG=langText, COUNTRY=countryText, genreId=genreIdText))
 
+    #insert original language data into selection db 
+    selectionTable.insert(dict(id=idText, appId=appIdText, title=row['title'], summary=row['summary'], description=row['description'], developer = developerText, LANG=langText, COUNTRY=countryText, genreId=genreIdText))
+    
     #sleep for 1 second 
     time.sleep(2)
     # may need to use timeout API method 

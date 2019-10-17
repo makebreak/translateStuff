@@ -1,4 +1,4 @@
-import os, file, csv, config, dataset, time, collections
+import os, file, csv, config, dataset, time, collections, sqlalchemy
 
 # Google credentials
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = file.dirname
@@ -34,15 +34,19 @@ def translateFunc(text):
         time.sleep(2) #sleep to avoid hitting rate limit
         return translatedText 
 
+### DB ###
+from sqlalchemy import select
+
 # in file db
 ORIGINAL_FILE = str(config.THIS_DIR / "in.db")
 
 # db to write to
 TRANSLATED_FILE = str(config.THIS_DIR / "out.db")
 
-# Connect to original db with scraped data 
-dbApps = dataset.connect('sqlite:///{}'.format(ORIGINAL_FILE))
-appTable = dbApps['android_apps']
+# Connect to original db with scraped data
+dbConnect = dataset.connect('sqlite:///{}'.format(ORIGINAL_FILE))
+appDB = dbConnect['android_apps']
+appTable = appDB.table 
 
 # Connect to db where we store translations
 db = dataset.connect('sqlite:///{}'.format(TRANSLATED_FILE))
@@ -50,16 +54,27 @@ db = dataset.connect('sqlite:///{}'.format(TRANSLATED_FILE))
 transTable = db['translated_android_apps']
 
 # The target and source languages
-source = 'es'
+source = 'pt' #{'pt':['pt']}
 target = 'en'
 
+# QUERY #
 # translate each entry and write to a db
-result = dbApps.query('SELECT id, appId, title, summary, description, developer, LANG FROM android_apps WHERE LANG=\''+source + '\' and COUNTRY=\'es\'and id > 3682')
 
+statement = appTable.select(appTable).with_only_columns([appTable.c.id,appTable.c.appId, appTable.c.title, appTable.c.summary, appTable.c.description, appTable.c.developer, appTable.c.LANG, appTable.c.COUNTRY]).where(appTable.c.LANG == %(source)s )                                                                
+
+print(source)
+print('statement is:')
+print(statement)
+
+# results
+results = dbConnect.query(statement + source +')')
+#result = dbApps.query('SELECT id, appId, title, summary, description, developer, LANG FROM android_apps WHERE LANG=\''+source + '\' and COUNTRY=\'es\'and id > 3682')
 #and id > 8692') 
 #and appId=\'com.\''
 
-for row in result:
+for row in results:
+    print('this is a row:')
+    print(row)
     # text from db to be translated
     # for v3 API, text to be translated needs to be a list
     app_dict = collections.defaultdict(list) 
@@ -72,7 +87,8 @@ for row in result:
     appIdText = row['appId']
     developerText = row['developer']
     langText = row['LANG']
-    
+
+    # TRANSLATION #
     # translate text - call function
     translatedTitleText = translateFunc(app_dict['title'])
     #print("translated Title text: " + translatedTitleText)
