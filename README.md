@@ -5,9 +5,9 @@ Translate from one db to another.
 Set databases in config.py. 
 
 Run translateSelection.py with languages as parameters:
-source = sys.argv[1]
-country = sys.argv[2]
-target = sys.argv[3]
+- source = sys.argv[1]
+- country = sys.argv[2]
+- target = sys.argv[3]
 
 Before running, you need to set up google cloud SDK. 
 
