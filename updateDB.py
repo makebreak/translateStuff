@@ -41,10 +41,6 @@ ORIGINAL_FILE = str(config.BASE_DIR / "crawled_apps_copy.db")
 
 # Connect to original db with scraped data 
 dbApps = dataset.connect('sqlite:///{}'.format(ORIGINAL_FILE))
-if store = 'android':
-    appsTable = dbApps['android_apps']
-else:
-    appsTable = dbApps['ios_apps']
 
 # The target and source languages
 try: source = sys.argv[1]
@@ -56,15 +52,23 @@ except: country = 'mx'
 try: store = sys.argv[3]
 except: store = 'android'
 
+if store == 'android':
+    appsTable = dbApps['android_apps']
+else:
+    appsTable = dbApps['ios_apps']
+
+
 #try: target = sys.argv[4]
 #except: target = 'en'
 target = 'en'
 
 # get selection of apps
-if store = 'android':
-    result = dbApps.query('SELECT id, appId, title, summary, description, LANG, COUNTRY FROM android_apps WHERE LANG={} and COUNTRY={};').format(source, country)
+if store == 'android':
+    result = dbApps.query('SELECT id, appId, title, summary, description, LANG, COUNTRY FROM android_apps WHERE LANG=\'{}\' and COUNTRY=\'{}\';'.format(source, country))
 else:
-    result = dbApps.query('SELECT id, appId, title, description, LANG, COUNTRY FROM ios_apps WHERE LANG={} and COUNTRY={};').format(source, country)
+    result = dbApps.query('SELECT id, appId, title, description, LANG, COUNTRY FROM ios_apps WHERE LANG=\'{}\' and COUNTRY=\'{}\';'.format(source, country))
+
+print(result)
 
 date1 = datetime.datetime.now()
 datestring = date1.strftime("%Y-%m-%d-%H%M%S")
@@ -72,12 +76,13 @@ datestring = date1.strftime("%Y-%m-%d-%H%M%S")
 # translate each entry and update db
 for row in result:
 
+    print("reading row")
     # text from db to be translated
     # for v3 API, text to be translated needs to be a list
     app_dict = collections.defaultdict(list) 
     app_dict['title'].append(row['title'])
     app_dict['descriptionText'].append(row['description'])
-    if store = 'android':
+    if store == 'android':
         app_dict['summaryText'].append(row['summary'])
 
     idText = row['id']
@@ -91,10 +96,10 @@ for row in result:
     print("translated Title text: " + translatedDescriptionText)
     
     #update db's android_apps table
-    if store = 'android':
+    if store == 'android':
         data = (dict(id=idText, title=translatedTitleText, summary=translatedSummaryText, description=translatedDescriptionText, TranslationTime=datestring))
     else:
-        data = (dict(id=idText, title=translatedTitleText, summary=translatedSummaryText, description=translatedDescriptionText, TranslationTime=datestring))
+        data = (dict(id=idText, title=translatedTitleText, description=translatedDescriptionText, TranslationTime=datestring))
 
     appsTable.update(data, ['id'])
         
