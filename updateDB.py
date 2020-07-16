@@ -64,9 +64,9 @@ target = 'en'
 
 # get selection of apps
 if store == 'android':
-    result = dbApps.query('SELECT id, appId, title, summary, description, LANG, COUNTRY FROM android_apps WHERE LANG=\'{}\' and COUNTRY=\'{}\';'.format(source, country))
+    #result = dbApps.query('SELECT id, appId, title, summary, description, LANG, COUNTRY FROM android_apps WHERE LANG=\'{}\' and COUNTRY=\'{}\';'.format(source, country))
 else:
-    result = dbApps.query('SELECT id, appId, title, description, LANG, COUNTRY FROM ios_apps WHERE LANG=\'{}\' and COUNTRY=\'{}\';'.format(source, country))
+    #result = dbApps.query('SELECT id, appId, title, description, LANG, COUNTRY FROM ios_apps WHERE LANG=\'{}\' and COUNTRY=\'{}\';'.format(source, country))
 
 print(result)
 
