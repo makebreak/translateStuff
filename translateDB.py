@@ -25,7 +25,7 @@ USAGE = "$ python {} <appstore> <db-file>".format(sys.argv[0])
 ### args ###
 # store
 store = 'android'
-if len(argv) > 1:
+if len(sys.argv) > 1:
     if (sys.argv[1] == 'android') or (sys.argv[1] == 'ios'):
         store = sys.argv[1]
         print('Store is:', store)
@@ -44,33 +44,35 @@ dbApps = dataset.connect('sqlite:///{}'.format(ORIGINAL_FILE))
 
 
 # translate function
-def translateFunc(texts, source_language, target_language):
+def translateFunc(appdict, source_language, target_language):
     """
     translate_text returns TranslateTextResponse
-    texts is a list and respond with a list of translations. Default it will traslate to to english. 
+    Default: translate to english. 
     """
-    try:
-        response = translate_client.translate_text(
-            contents=texts
-            target_language_code=target_language,
-            mime_type=None,
-            source_language_code=source_language,
-            parent=parent_code
+    print(type(appdict))
+    for key in appdict:
+        print("Translating: ",key)
+        try:
+            response = translate_client.translate_text(
+                contents=appdict[key],
+                target_language_code=target_language,
+                mime_type=None,
+                source_language_code=source_language,
+                parent=parent_code
         )
-        for translation in response.translations:
-            print(u'Translation: {}'.format(translation.translated_text))
-        #sleep for 0.1 second 
-        time.sleep(0.1)   
-        return response.translations
-    except Exception as e:
-        print("not able to translate, error >>", e)
-        # response.translations is a Translation object
-        time.sleep(1)
-        return None
+            # response.translations is a Translation object
+            for translation in response.translations:
+                print(u'Translation: {}'.format(translation.translated_text))
+                appdict[key] = translation.translated_text 
 
-## I am not sure I understand if this function is sufficient to check if it is
-## translated or not.  A better would be test if the ttranslatetime is not
-## null. Can you test it? 
+            #sleep for 0.1 second
+            time.sleep(0.1)
+                                
+        except Exception as e:
+            print("not able to translate, error >>", e)
+    
+    return appdict
+
 def isTranslated(appid):
     """
     skip if already translated
@@ -78,16 +80,22 @@ def isTranslated(appid):
     """
     try:
         testQuery = dbApps.query(
-            "SELECT 1 from {store}_apps where appId = :appId "\
-            "and {colname} = :".format(store=store, colname=colname),
+            "SELECT ttitle from {store}_apps where appId = :appId "\
+            "and {colname} = :value".format(store=store, colname=colname),
             appId=appid, value=source_language
         )
-        if testQuery:
+        testText = None 
+        for entry in testQuery:
+            tt = entry['ttitle']
+            print(tt)
+            if tt is not None:
+                testText = tt
+        if testText:
             print("already translated, skipping")
             return True
         return False
     except Exception as e:
-        print("probably no translated column tsummary found >> ",
+        print("probably no translated column ttitle found >> ",
               e, file=sys.stderr)
         raise ValueError(e)
 
@@ -147,33 +155,63 @@ def translate_all_apps(lang=source_language):
 
     # translate each entry and update db
     for row in result:
-        if isTranslated(row['appId'])
+        if isTranslated(row['appId']):
+            print("Already translated. Going to next row.")
+            continue 
         date1 = datetime.datetime.now()
         datestring = date1.strftime("%Y-%m-%d-%H%M%S")
 
         print("reading row")
         # text from db to be translated
         # for v3 API, text to be translated needs to be a list
+        
+        app_dict = collections.defaultdict(list) 
+        app_dict['title'].append(row['title'])
+        app_dict['description'].append(row['description'])
+        if store == 'android':
+            app_dict['summary'].append(row['summary'])
+        print(app_dict)
+        '''
         texts = [row['title'],
                  row['description'],
-                 row['summary'] f store='android' else '']
-
+                 row['summary'] if store=='android' else '']
         try:
-            ttitle, tdescription, tsummary = translateFunc(app_dict)
+            translated = translateFunc(texts, source_language, target_language)
+        '''
+        try:
+            translated = translateFunc(app_dict, source_language, target_language)
+            print(translated)
+            ttitle = translated['title']
+            tdescription = translated['description']
+            tsummary = translated['summary']
+            
         except Exception as e:
             print("Could not translate: {appId}".format(**row))
+            print(e)
             continue
             #update db's android_apps table
-        data = dict(
-            id = row['id'],
-            ttitle = ttitle,
-            tdescription = tdescription,
-            translationtime = datestring
-        )
+
+        
         if store == 'android':
-            data['tsummary'] = tsummary,
+            data = dict(
+                id = row['id'],
+                ttitle = ttitle,
+                tsummary = tsummary,
+                tdescription = tdescription,
+                translationtime = datestring
+            )
+        else:
+            data = dict(
+                id = row['id'],
+                ttitle = ttitle,
+                tdescription = tdescription,
+                translationtime = datestring
+            )
 
-        appsTable.update(data, ['id'])
-
+        try:
+            appsTable.update(data, ['id'])
+        except Exception as e:
+            print("Error: ", e)
+            
 if __name__ == "__main__":
     translate_all_apps()
