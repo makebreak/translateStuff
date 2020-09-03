@@ -23,7 +23,7 @@ def getRandomSample(conn):
     # Get array of languages that have been detected and translated
     langs = [] 
     getRelevantLangsQuery = "SELECT distinct detected FROM android_apps WHERE translatedtime IS NOT NULL;"
-    langsDBresult = conn.execute(stmt)
+    langsDBresult = conn.execute(getRelevantLangsQuery)
     for i in langsDBresult:
         lang = i['detected']
         langs.append(lang)
